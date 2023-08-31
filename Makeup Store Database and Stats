@@ -1,0 +1,21 @@
+CREATE TABLE makeup (id integer primary key, product text, colors text, use text,price integer);
+insert into makeup values
+(1, "foundation", "light", "skin", 15),
+(2, "foundation", "medium", "skin", 15),
+(3, "foundation", "dark", 'skin', 15),
+(4, "lipstick", "red", "lips", 8),
+(5, "lipstick", "pink", "lips", 8),
+(6, "lipstick", "black", "lips", 8),
+(7, "lipstick", "purple", "lips", 8),
+(8, "lipstick", "green", "lips", 8),
+(9, "eyeliner", "black", "eyes", 6),
+(10, "eyeliner", "brown", "eyes", 6),
+(11, "eyeliner", "gold", "eyes", 6),
+(12, "eyeliner", "blue", "eyes", 6),
+(13, "blush", "rosy", "cheeks", 10),
+(14, "blush", "alien blue", "cheeks", 10),
+(15, "blush", "cwispy", "cheeks", 10);
+
+select * from makeup order by price asc;
+select * from makeup where price>=10;
+select sum(price) from makeup where price<=8;
