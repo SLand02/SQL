@@ -1,0 +1,249 @@
+# The following analysis was done on a database with 11 different tables total. The table names are as follows:
+media_types, genres, playlists, playlist_track, tracks, artists, albums, invoice_items, invoices, customers, and employees.
+
+#Analysis
+/* Show customers who are not located in the U.S.*/
+select CustomerID, FirstName, LastName, Country
+from customers
+where Country <> 'USA'
+order by Country;
+
+
+/* Show only customers from Brazil */
+select CustomerId, FirstName, LastName, Country
+from customers
+where Country = 'Brazil';
+
+
+/* Find the invoices of the customers who are from Brazil.*/
+select customers.FirstName, customers.LastName, invoices.InvoiceId, invoices.InvoiceDate, invoices.BillingCountry
+from customers
+inner join invoices
+ON customers.CustomerId = invoices.CustomerId
+where Country = 'Brazil';
+
+
+/*Show the employees who are Sales Agents*/
+select * 
+from employees
+where Title = 'Sales Support Agent';
+
+
+/* Find a unique list of billing Countries from the invoices table. */
+select distinct BillingCountry
+from invoices;
+
+
+/* Provide a query that shows the invoices assosciated with each Sales Agent. */
+select employees.FirstName, employees.LastName, invoices.InvoiceId, invoices.InvoiceDate, invoices.Total
+from invoices
+inner join customers
+ON invoices.CustomerId = customers.CustomerId
+inner join employees
+ON customers.SupportRepId = employees.EmployeeId;
+
+
+/*Show the invoice total, customer name, country, and sales agent name for all invoices and customers. */
+select employees.FirstName as employee, employees.LastName as name, invoices.InvoiceDate, customers.FirstName as customer, customers.LastName, invoices.BillingCountry, invoices.Total
+from invoices 
+inner join customers
+ON invoices.CustomerId = customers.CustomerId
+inner join employees
+ON customers.SupportRepId = employees.EmployeeId
+order by invoices.BillingCountry;
+
+
+/*How many invoices were there in 2009? */
+select COUNT(InvoiceId)
+from invoices 
+where InvoiceDate LIKE '%2009%';
+
+
+/* What are the total sales for 2009? */
+;select ROUND(SUM(Total), 2)
+from invoices
+where InvoiceDate LIKE '%2009%';
+
+
+/* Write a query that includes the purchased track name with each invoice line ID. */
+select invoice_items.InvoiceId, invoice_items.InvoiceLineId, tracks.Name
+from invoice_items
+INNER JOIN tracks
+ON tracks.TrackId = invoice_items.TrackId
+order by invoice_items.InvoiceId;
+
+
+/* Write a query that includes the purchased track name AND artist name with each invoice line ID. */
+select invoice_items.InvoiceLineId, tracks.Name, albums.ArtistId, artists.Name
+from invoice_items
+inner join tracks
+ON tracks.TrackId = invoice_items.TrackId
+inner join albums 
+ON tracks.AlbumId = albums.AlbumId
+inner join  artists 
+ON albums.ArtistId = artists.ArtistId
+order by artists.ArtistId;
+
+
+/* Provide a query that shows all the tracks, and include the album name, media type, and genre. */
+select tracks.Name, albums.Title, media_types.Name, genres.Name
+from tracks
+inner join albums
+ON tracks.AlbumId = albums.AlbumId
+inner join media_types
+ON media_types.MediaTypeId = tracks.MediaTypeId
+inner join genres
+ON genres.GenreId = tracks.GenreId
+order by albums.Title;
+
+
+/* Show the total sales made by each sales agent. */
+select employees.FirstName, employees.LastName, ROUND(SUM(invoices.Total),2) as 'Total Sales'
+from employees
+inner join customers
+ON employees.EmployeeId = customers.SupportRepId
+inner join invoices
+ON customers.CustomerId = invoices.CustomerId
+group by employees.EmployeeId;
+
+
+/* Which sales agent made the most dollars in sales in 2009? */
+select employees.FirstName, employees.LastName, ROUND(SUM(invoices.Total),0)
+from employees
+inner join customers
+ON employees.EmployeeId = customers.SupportRepId
+inner join invoices
+ON customers.CustomerId = invoices.CustomerId
+where invoices.InvoiceDate LIKE '%2009%'
+group by employees.EmployeeId
+order by ROUND(SUM(invoices.Total),0) DESC
+limit 1;
+
+
+/* What are the top 3 countries for customer residence? */
+select Country, COUNT(CustomerId) as 'Total Customers'
+from customers
+group by Country
+order by COUNT(CustomerId) DESC
+limit 3;
+
+
+/* What are the TOP 100 tracks for the Digital Media Store? How much revenue have they made? */
+select tracks.Name, SUM(invoice_items.Quantity) as 'Total Units Sold',
+ROUND(SUM(invoices.Total),2) as 'Total Revenue'
+from tracks INNER JOIN invoice_items
+ON  tracks.TrackId = invoice_items.TrackId
+INNER JOIN invoices
+ON invoices.InvoiceId = invoice_items.InvoiceId
+group by tracks.Name
+order by SUM(invoice_items.Quantity) DESC
+LIMIT 100;
+
+
+/* Show the most popular music genre for each state in the US. */
+select invoices.BillingState as 'State', genres.Name as 'Genre', ROUND(SUM(invoices.Total),2) as 'Total Earnings'
+from invoices inner join invoice_items
+on invoices.InvoiceId = invoice_items.InvoiceId
+inner join tracks
+on invoice_items.TrackId = tracks.TrackId
+inner join genres
+on tracks.GenreId = genres.GenreId
+WHERE invoices.BillingCountry = 'USA'
+group by invoices.BillingState
+order by genres.GenreId;
+
+
+/* Show the most popular artist for each Country. */
+select invoices.BillingCountry as 'Country',
+artists.Name as 'Artist', COUNT(invoices.InvoiceId) as 'Total Units Sold'
+from invoices inner join invoice_items
+ON invoices.InvoiceId = invoice_items.InvoiceId
+inner join tracks
+on invoice_items.TrackId = tracks.TrackId
+inner join albums
+on tracks.AlbumId = albums.AlbumId
+inner join artists
+on albums.ArtistId = artists.ArtistId
+group by invoices.BillingCountry
+order by invoices.BillingCountry DESC;
+
+
+/* Show the top selling album for each month in 2009? */
+select albums.Title, COUNT(invoice_items.InvoiceId) as 'Total Sold' , invoices.InvoiceDate, 
+case
+when invoices.InvoiceDate like '2009-01%' then 'January'
+when invoices.InvoiceDate like '2009-02%' then 'February'
+when invoices.InvoiceDate like '2009-03%' then 'March'
+when invoices.InvoiceDate like '2009-04%' then 'April'
+when invoices.InvoiceDate like '2009-05%' then 'May'
+when invoices.InvoiceDate like '2009-06%' then 'June'
+when invoices.InvoiceDate like '2009-07%' then 'July'
+when invoices.InvoiceDate like '2009-08%' then 'August'
+when invoices.InvoiceDate like '2009-09%' then 'September'
+when invoices.InvoiceDate like '2009-10%' then 'October'
+when invoices.InvoiceDate like '2009-11%' then 'November'
+else 'December'
+end as Month
+from invoices inner join invoice_items
+on invoices.InvoiceId = invoice_items.InvoiceId
+inner join tracks 
+on tracks.TrackId = invoice_items.TrackId
+inner join albums
+on tracks.AlbumId = albums.AlbumId
+where invoices.InvoiceDate like '2009%'
+group by invoices.InvoiceDate;
+
+
+/* Show all employee information organized by title. */
+select *
+from employees
+order by Title;
+
+
+/* Show all tracks and their prices in order of their albums. */
+select distinct tracks.Name as 'Song Name', invoice_items.UnitPrice, albums.Title as 'Album'
+from albums inner join tracks
+on albums.AlbumId = tracks.AlbumId
+inner join invoice_items
+on tracks.TrackId = invoice_items.TrackId
+order by albums.AlbumId;
+
+
+/* Show the total revenue generated by each country as well as the total number of customers residing there. */
+select customers.Country, count(customers.CustomerId) as 'Total Customers', ROUND(SUM(invoices.Total),2) as 'Total Revenue from Country'
+from customers inner join invoices
+on customers.CustomerId = invoices.CustomerId
+group by invoices.BillingCountry;
+
+
+/* How many tracks are available in each genre? */
+;select genres.Name as 'Genre', count(tracks.TrackId) as 'Total Songs'
+from genres inner join tracks
+on genres.GenreId = tracks.GenreId
+group by genres.GenreId;
+
+
+/*What is the most common media type? */
+select media_types.Name, count(invoice_items.InvoiceId) as 'Total Purchases'
+from media_types inner join tracks
+on media_types.MediaTypeId = tracks.MediaTypeId
+inner join invoice_items
+on tracks.TrackId = invoice_items.TrackId
+group by media_types.MediaTypeId
+order by count(invoice_items.InvoiceId) DESC;
+
+
+/* Which artists have the most albums? Show the top 3.*/
+select distinct artists.Name as 'Artist', count(albums.AlbumId) as 'Total Albums', albums.Title
+from artists inner join albums
+on artists.ArtistId = albums.ArtistId
+group by artists.ArtistId
+order by count(albums.AlbumId) DESC
+limit 3;
+
+
+/* What is the total number of invoices for each customer? How much has each customer spent total? */
+select customers.FirstName, customers.LastName, count(invoices.InvoiceId) as 'Total Invoices', sum(invoices.Total) as 'Total Spent'
+from customers inner join invoices
+on customers.CustomerId = invoices.CustomerId
+group by customers.CustomerId;
